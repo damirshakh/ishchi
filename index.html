@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ish vaqti va maosh hisoboti</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: #1B2530;
+    --ink-soft: #5C6570;
+    --paper: #EDEAE1;
+    --panel: #F8F6F0;
+    --rule: #D8D2C2;
+    --rule-strong: #B9AF98;
+    --gold: #B8862E;
+    --gold-soft: #E8D3A0;
+    --rust: #A6452E;
+    --teal: #35766C;
+    --shadow: rgba(27,37,48,0.10);
+  }
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  body{
+    margin:0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', sans-serif;
+    padding: 24px 14px 70px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .sheet{
+    max-width: 760px;
+    margin: 0 auto;
+    background: var(--panel);
+    border: 1px solid var(--rule-strong);
+    box-shadow: 0 18px 40px var(--shadow);
+  }
+
+  /* ---------- Header ---------- */
+  .masthead{
+    background: var(--ink);
+    color: var(--panel);
+    padding: 26px 28px 22px;
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .masthead h1{
+    margin:0 0 4px;
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 28px;
+    letter-spacing: 0.2px;
+  }
+  .masthead p{
+    margin:0;
+    font-size: 13px;
+    color: #B9C2CC;
+  }
+  .masthead .as-of{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: #92A0AC;
+    text-align: right;
+  }
+  select#monthFilter{
+    margin-top: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    padding: 6px 8px;
+    background: #223040;
+    color: var(--panel);
+    border: 1px solid #3A4A5C;
+    border-radius: 2px;
+  }
+
+  /* ---------- Stat strip ---------- */
+  .stats{
+    display:flex;
+    border-bottom: 2px solid var(--ink);
+  }
+  .stat{
+    flex:1;
+    padding: 16px 18px;
+    border-right: 1px solid var(--rule);
+    transition: opacity .3s ease;
+  }
+  .stat:last-child{ border-right:none; }
+  .stat .label{ font-size: 12px; color: var(--ink-soft); margin-bottom: 6px; }
+  .stat .value{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  /* ---------- Sections ---------- */
+  section{
+    padding: 22px 28px;
+    border-bottom: 1px solid var(--rule);
+  }
+  section:last-of-type{ border-bottom:none; }
+  h2{
+    font-family: 'Fraunces', serif;
+    font-size: 17px;
+    font-weight: 600;
+    margin: 0 0 14px;
+    color: var(--ink);
+  }
+  .subhint{ font-size: 12px; color: var(--ink-soft); margin: -8px 0 14px; }
+
+  /* ---------- Chart ---------- */
+  .chart-wrap{ overflow-x:auto; padding-bottom: 4px; }
+  .chart-wrap svg{ display:block; }
+  .bar{ fill: var(--gold); transition: height .35s ease, y .35s ease; }
+  .bar.over{ fill: var(--teal); }
+  .axis-label{ font: 10px 'IBM Plex Mono', monospace; fill: var(--ink-soft); }
+  .chart-empty{ color: var(--ink-soft); font-size: 13px; font-style: italic; }
+  .legend{ display:flex; gap:16px; margin-top:8px; font-size:11px; color:var(--ink-soft); }
+  .legend span{ display:inline-flex; align-items:center; gap:5px; }
+  .legend i{ width:9px; height:9px; display:inline-block; border-radius:1px; }
+
+  /* ---------- Forms ---------- */
+  .field-row{ display:flex; gap:10px; flex-wrap: wrap; align-items: flex-end; }
+  label{
+    display:flex; flex-direction:column; gap:5px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+  input{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    padding: 7px 8px;
+    border: 1px solid var(--rule-strong);
+    background: #fff;
+    color: var(--ink);
+    border-radius: 2px;
+  }
+  input:focus, button:focus-visible, select:focus-visible{
+    outline: 2px solid var(--gold); outline-offset: 1px;
+  }
+  input[type="number"]{ width: 108px; }
+  input[type="date"]{ width: 148px; }
+  input[type="time"]{ width: 106px; }
+  button{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    padding: 8px 14px;
+    background: var(--ink);
+    color: var(--panel);
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+  button:hover{ background: var(--rust); }
+  button.secondary{
+    background: transparent; color: var(--ink); border: 1px solid var(--rule-strong);
+  }
+  button.secondary:hover{ background: var(--rule); color: var(--ink); }
+  button.ghost{
+    background: transparent; color: var(--ink-soft); border: 1px solid var(--rule-strong);
+    padding: 3px 7px; font-size: 12px; border-radius: 2px;
+  }
+  button.ghost:hover{ background: var(--ink); color: var(--panel); border-color: var(--ink); }
+  button.ghost.danger:hover{ background: var(--rust); border-color: var(--rust); }
+
+  details.advanced{ margin-top: 14px; }
+  details.advanced summary{
+    cursor:pointer; font-size:12px; color: var(--ink-soft); font-family:'IBM Plex Mono',monospace;
+  }
+  details.advanced .field-row{ margin-top: 12px; }
+
+  /* ---------- Tables ---------- */
+  .table-scroll{ overflow-x:auto; }
+  table{
+    width:100%;
+    border-collapse: collapse;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+  }
+  th{
+    text-align:left; font-weight:600; color: var(--ink-soft);
+    border-bottom: 1px solid var(--ink);
+    padding: 6px 8px; white-space: nowrap;
+  }
+  td{ padding: 7px 8px; border-bottom: 1px dashed var(--rule); white-space: nowrap; }
+  td.num, th.num{ text-align:right; }
+  tr.over td.net{ border-left: 3px solid var(--teal); }
+  tfoot td{ border-bottom:none; border-top: 1px solid var(--ink); font-weight:600; }
+  .empty{ color: var(--ink-soft); font-size:13px; font-style:italic; padding: 6px 0; }
+  .row-actions{ display:flex; gap:4px; }
+
+  /* ---------- Statement footer ---------- */
+  .statement{
+    background: var(--ink);
+    color: var(--panel);
+    padding: 24px 28px;
+  }
+  .statement .line{
+    display:flex; justify-content:space-between;
+    font-family:'IBM Plex Mono', monospace; font-size:13px;
+    padding: 5px 0; border-bottom: 1px dotted rgba(248,246,240,0.2);
+  }
+  .statement .line:last-of-type{ border-bottom:none; }
+  .statement .line.deduct span:last-child{ color: #E4A79A; }
+  .statement .line.total{
+    margin-top:10px; padding-top:14px; border-top: 1px solid rgba(248,246,240,0.35);
+    font-size:15px; font-weight:600;
+  }
+  .final{ padding: 24px 28px 30px; display:flex; justify-content:space-between; align-items:flex-end; flex-wrap: wrap; gap:16px; }
+  .final .amount-label{ font-size:13px; color: var(--ink-soft); margin-bottom:4px; }
+  .final .amount{ font-family:'Fraunces', serif; font-size:38px; font-weight:600; color: var(--gold); }
+  .final .actions{ display:flex; gap:8px; }
+
+  @media (max-width: 560px){
+    .stats{ flex-wrap: wrap; }
+    .stat{ flex: 1 1 50%; border-bottom: 1px solid var(--rule); }
+    section{ padding: 18px 16px; }
+    .masthead{ padding: 22px 16px 18px; }
+    .statement, .final{ padding: 20px 16px; }
+  }
+
+  @media print{
+    body{ background:#fff; padding:0; }
+    .sheet{ box-shadow:none; border:none; max-width:100%; }
+    .no-print{ display:none !important; }
+    .masthead{ background:#fff; color:#000; border-bottom: 2px solid #000; }
+    .masthead p, .masthead .as-of{ color:#333; }
+    .statement{ background:#fff; color:#000; }
+    .statement .line.deduct span:last-child{ color:#000; }
+    .final .amount{ color:#000; }
+  }
+</style>
+</head>
+<body>
+  <div class="sheet">
+
+    <div class="masthead">
+      <div>
+        <h1>Ish vaqti va maosh hisoboti</h1>
+        <p>Har kunlik ish vaqtidan avtomatik maosh, soliq va qoldiq hisoblanadi</p>
+        <select id="monthFilter" class="no-print"></select>
+      </div>
+      <div class="as-of">Hisobot sanasi<br><span id="asOfDate">—</span></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="label">Ishlangan kunlar</div><div class="value" id="statDays">0</div></div>
+      <div class="stat"><div class="label">Sof soat (davr)</div><div class="value" id="statHours">0</div></div>
+      <div class="stat"><div class="label">Ish haqi (davr)</div><div class="value" id="statPay">0</div></div>
+      <div class="stat"><div class="label">Umumiy qoldiq</div><div class="value" id="statRemaining">0</div></div>
+    </div>
+
+    <section>
+      <h2>Kunlik yuklama</h2>
+      <div class="subhint">Tanlangan davrdagi sof ish soatlari. Yashil ustun — kutilgan tanaffus chegarasidan ortiq ishlangan kun.</div>
+      <div class="chart-wrap" id="chartWrap"></div>
+      <div class="legend">
+        <span><i style="background:var(--gold)"></i>Odatiy kun</span>
+        <span><i style="background:var(--teal)"></i>Uzun smena</span>
+      </div>
+    </section>
+
+    <section class="no-print">
+      <h2>Sozlamalar</h2>
+      <div class="field-row">
+        <label>Valyuta belgisi<input type="text" id="currencyInput" maxlength="4" style="width:70px"></label>
+        <label>Soatlik stavka<input type="number" id="rateInput" min="0" step="1"></label>
+        <label>Soliq foizi (%)<input type="number" id="taxInput" min="0" max="100" step="0.1"></label>
+        <button id="saveSettingsBtn">Saqlash</button>
+      </div>
+      <details class="advanced">
+        <summary>Tanaffus qoidasini moslashtirish</summary>
+        <div class="field-row">
+          <label>Chegara (soat)<input type="number" id="breakThresholdInput" min="0" step="0.5"></label>
+          <label>Chegaradan ortiq bo'lsa (soat)<input type="number" id="breakOverInput" min="0" step="0.25"></label>
+          <label>Chegaradan kam/teng bo'lsa (soat)<input type="number" id="breakUnderInput" min="0" step="0.25"></label>
+        </div>
+      </details>
+    </section>
+
+    <section class="no-print">
+      <h2 id="sessionFormTitle">Yangi yozuv qo'shish</h2>
+      <div class="field-row">
+        <label>Sana<input type="date" id="dateInput"></label>
+        <label>Keldim<input type="time" id="startInput"></label>
+        <label>Ketdim<input type="time" id="endInput"></label>
+        <button id="addSessionBtn">Qo'shish</button>
+        <button id="cancelSessionEditBtn" class="secondary" style="display:none;">Bekor qilish</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Kunlik yozuvlar</h2>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Sana</th><th>Kun</th><th>Keldi</th><th>Ketdi</th>
+              <th class="num">Soat</th><th class="num">Tanaffus</th>
+              <th class="num">Sof soat</th><th class="num">Pul</th><th class="no-print"></th>
+            </tr>
+          </thead>
+          <tbody id="sessionsBody"></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="4">Jami (davr)</td>
+              <td class="num" id="sumHours">0</td>
+              <td class="num" id="sumBreak">0</td>
+              <td class="num" id="sumNet">0</td>
+              <td class="num" id="sumPay">0</td>
+              <td class="no-print"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div id="sessionsEmpty" class="empty" style="display:none;">Tanlangan davrda yozuv yo'q.</div>
+    </section>
+
+    <section class="no-print">
+      <h2 id="paymentFormTitle">Berilgan pul (avans / to'lov)</h2>
+      <div class="field-row">
+        <label>Sana<input type="date" id="payDateInput"></label>
+        <label>Summa<input type="number" id="payAmountInput" min="0" step="1"></label>
+        <button id="addPaymentBtn">Qo'shish</button>
+        <button id="cancelPaymentEditBtn" class="secondary" style="display:none;">Bekor qilish</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>To'lovlar tarixi</h2>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Sana</th><th class="num">Summa</th><th class="no-print"></th></tr></thead>
+          <tbody id="paymentsBody"></tbody>
+          <tfoot><tr><td>Jami berilgan</td><td class="num" id="sumPaid">0</td><td class="no-print"></td></tr></tfoot>
+        </table>
+      </div>
+      <div id="paymentsEmpty" class="empty" style="display:none;">Hali to'lov yo'q.</div>
+    </section>
+
+    <div class="statement">
+      <div class="line"><span>Jami sof soat (barcha vaqt)</span><span id="stAllHours">0</span></div>
+      <div class="line"><span>Ish haqi, soliqsiz</span><span id="stAllGross">0</span></div>
+      <div class="line deduct"><span id="stTaxLabel">Soliq</span><span id="stAllTax">0</span></div>
+      <div class="line total"><span>Sof ish haqi</span><span id="stAllNet">0</span></div>
+      <div class="line"><span>Berilgan pul (jami)</span><span id="stAllPaid">0</span></div>
+    </div>
+
+    <div class="final">
+      <div>
+        <div class="amount-label">To'lanishi kerak bo'lgan qoldiq</div>
+        <div class="amount" id="finalRemaining">0</div>
+      </div>
+      <div class="actions no-print">
+        <button class="secondary" id="exportCsvBtn">CSV yuklab olish</button>
+        <button class="secondary" id="printBtn">Chop etish</button>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+const DEFAULT_SETTINGS = { rate:260, taxPercent:13, currency:'₽', breakThreshold:6, breakOver:1, breakUnder:0.5 };
+let settings = { ...DEFAULT_SETTINGS };
+let sessions = [];
+let payments = [];
+let editingSessionId = null;
+let editingPaymentId = null;
+
+const WEEKDAYS = ['Yak','Dush','Sesh','Chor','Pay','Jum','Shan'];
+
+function fmt(n){ return Math.round((Number(n)||0)*100)/100; }
+function money(n){ return fmt(n).toLocaleString('ru-RU') + ' ' + settings.currency; }
+
+async function storageGet(key){
+  try{ const r = await window.storage.get(key, false); return r ? JSON.parse(r.value) : null; }
+  catch(e){ return null; }
+}
+async function storageSet(key, value){
+  try{ await window.storage.set(key, JSON.stringify(value), false); }
+  catch(e){ console.error('storage set failed', key, e); }
+}
+
+function timeToMinutes(t){ const [h,m] = t.split(':').map(Number); return h*60+m; }
+
+function calcSession(start, end){
+  let s = timeToMinutes(start), e = timeToMinutes(end);
+  let diff = e - s;
+  if(diff <= 0) diff += 24*60;
+  const hours = diff/60;
+  const breakH = hours > settings.breakThreshold ? settings.breakOver : settings.breakUnder;
+  let netHours = hours - breakH;
+  if(netHours < 0) netHours = 0;
+  const pay = netHours * settings.rate;
+  return { hours: fmt(hours), breakHours: fmt(breakH), netHours: fmt(netHours), pay: fmt(pay) };
+}
+
+function recalcAllSessions(){
+  sessions = sessions.map(s=>({ ...s, ...calcSession(s.start, s.end) }));
+}
+
+function weekday(dateStr){
+  const d = new Date(dateStr + 'T00:00:00');
+  return WEEKDAYS[d.getDay()];
+}
+
+function populateMonthFilter(){
+  const sel = document.getElementById('monthFilter');
+  const months = Array.from(new Set(sessions.map(s=>s.date.slice(0,7)))).sort().reverse();
+  const prev = sel.value;
+  sel.innerHTML = '';
+  const allOpt = document.createElement('option');
+  allOpt.value = 'all'; allOpt.textContent = 'Barcha oylar';
+  sel.appendChild(allOpt);
+  months.forEach(m=>{
+    const opt = document.createElement('option');
+    opt.value = m; opt.textContent = m;
+    sel.appendChild(opt);
+  });
+  if(months.includes(prev) || prev==='all'){ sel.value = prev; }
+  else if(months.length){ sel.value = months[0]; }
+  else { sel.value = 'all'; }
+}
+
+function filteredSessions(){
+  const m = document.getElementById('monthFilter').value;
+  if(!m || m==='all') return sessions.slice();
+  return sessions.filter(s=>s.date.startsWith(m));
+}
+
+function renderChart(list){
+  const wrap = document.getElementById('chartWrap');
+  if(!list.length){ wrap.innerHTML = '<div class="chart-empty">Ushbu davrda ma\'lumot yo\'q.</div>'; return; }
+  const sorted = list.slice().sort((a,b)=>a.date.localeCompare(b.date));
+  const max = Math.max(...sorted.map(s=>s.netHours), 4) * 1.15;
+  const barW = 20, gap = 10, chartH = 130, leftPad = 6, topPad = 10;
+  const width = sorted.length*(barW+gap) + leftPad*2;
+  const showFullDate = document.getElementById('monthFilter').value === 'all';
+  let bars = '';
+  sorted.forEach((s,i)=>{
+    const h = (s.netHours/max) * chartH;
+    const x = leftPad + i*(barW+gap);
+    const y = topPad + (chartH - h);
+    const over = s.hours > settings.breakThreshold;
+    const label = showFullDate ? s.date.slice(5) : s.date.slice(8,10);
+    bars += `<rect class="bar${over?' over':''}" x="${x}" y="${y}" width="${barW}" height="${h}" rx="2">
+      <title>${s.date} — ${s.netHours} soat</title>
+    </rect>
+    <text class="axis-label" x="${x+barW/2}" y="${topPad+chartH+14}" text-anchor="middle">${label}</text>`;
+  });
+  wrap.innerHTML = `<svg viewBox="0 0 ${width} ${topPad+chartH+22}" width="${width}" height="${topPad+chartH+22}">${bars}</svg>`;
+}
+
+function renderSessionsTable(list){
+  const body = document.getElementById('sessionsBody');
+  const empty = document.getElementById('sessionsEmpty');
+  body.innerHTML = '';
+  empty.style.display = list.length ? 'none' : 'block';
+  const sorted = list.slice().sort((a,b)=> b.date.localeCompare(a.date));
+  let sumHours=0, sumBreak=0, sumNet=0, sumPay=0;
+  sorted.forEach(s=>{
+    sumHours+=s.hours; sumBreak+=s.breakHours; sumNet+=s.netHours; sumPay+=s.pay;
+    const over = s.hours > settings.breakThreshold;
+    const tr = document.createElement('tr');
+    if(over) tr.className = 'over';
+    tr.innerHTML = `
+      <td>${s.date}</td><td>${weekday(s.date)}</td><td>${s.start}</td><td>${s.end}</td>
+      <td class="num">${s.hours}</td><td class="num">${s.breakHours}</td>
+      <td class="num net">${s.netHours}</td><td class="num">${money(s.pay)}</td>
+      <td class="no-print"><div class="row-actions">
+        <button class="ghost" data-act="edit-session" data-id="${s.id}">✎</button>
+        <button class="ghost danger" data-act="del-session" data-id="${s.id}">×</button>
+      </div></td>`;
+    body.appendChild(tr);
+  });
+  document.getElementById('sumHours').textContent = fmt(sumHours);
+  document.getElementById('sumBreak').textContent = fmt(sumBreak);
+  document.getElementById('sumNet').textContent = fmt(sumNet);
+  document.getElementById('sumPay').textContent = money(sumPay);
+  return { sumHours, sumBreak, sumNet, sumPay };
+}
+
+function renderPaymentsTable(){
+  const body = document.getElementById('paymentsBody');
+  const empty = document.getElementById('paymentsEmpty');
+  body.innerHTML = '';
+  empty.style.display = payments.length ? 'none' : 'block';
+  const sorted = payments.slice().sort((a,b)=> b.date.localeCompare(a.date));
+  let sum = 0;
+  sorted.forEach(p=>{
+    sum += Number(p.amount);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${p.date}</td><td class="num">${money(p.amount)}</td>
+      <td class="no-print"><div class="row-actions">
+        <button class="ghost" data-act="edit-payment" data-id="${p.id}">✎</button>
+        <button class="ghost danger" data-act="del-payment" data-id="${p.id}">×</button>
+      </div></td>`;
+    body.appendChild(tr);
+  });
+  document.getElementById('sumPaid').textContent = money(sum);
+  return sum;
+}
+
+function renderAll(){
+  populateMonthFilter();
+  const fList = filteredSessions();
+  renderChart(fList);
+  const periodSums = renderSessionsTable(fList);
+  const paidSum = renderPaymentsTable();
+
+  // period stats (respect month filter)
+  document.getElementById('statDays').textContent = fList.length;
+  document.getElementById('statHours').textContent = fmt(periodSums.sumNet);
+  document.getElementById('statPay').textContent = money(periodSums.sumPay);
+
+  // all-time statement (independent of filter)
+  const allGross = sessions.reduce((a,s)=>a+s.pay,0);
+  const allHours = sessions.reduce((a,s)=>a+s.netHours,0);
+  const tax = allGross * settings.taxPercent/100;
+  const netPay = allGross - tax;
+  const remaining = netPay - paidSum;
+
+  document.getElementById('stAllHours').textContent = fmt(allHours) + ' soat';
+  document.getElementById('stAllGross').textContent = money(allGross);
+  document.getElementById('stTaxLabel').textContent = `Soliq (${settings.taxPercent}%)`;
+  document.getElementById('stAllTax').textContent = '-' + money(tax);
+  document.getElementById('stAllNet').textContent = money(netPay);
+  document.getElementById('stAllPaid').textContent = '-' + money(paidSum);
+  document.getElementById('finalRemaining').textContent = money(remaining);
+  document.getElementById('statRemaining').textContent = money(remaining);
+
+  document.getElementById('asOfDate').textContent = new Date().toLocaleDateString('ru-RU');
+}
+
+async function saveSessions(){ await storageSet('sessions', sessions); }
+async function savePayments(){ await storageSet('payments', payments); }
+async function saveSettings(){ await storageSet('settings', settings); }
+
+function resetSessionForm(){
+  editingSessionId = null;
+  document.getElementById('sessionFormTitle').textContent = "Yangi yozuv qo'shish";
+  document.getElementById('addSessionBtn').textContent = "Qo'shish";
+  document.getElementById('cancelSessionEditBtn').style.display = 'none';
+  document.getElementById('startInput').value = '';
+  document.getElementById('endInput').value = '';
+}
+function resetPaymentForm(){
+  editingPaymentId = null;
+  document.getElementById('paymentFormTitle').textContent = "Berilgan pul (avans / to'lov)";
+  document.getElementById('addPaymentBtn').textContent = "Qo'shish";
+  document.getElementById('cancelPaymentEditBtn').style.display = 'none';
+  document.getElementById('payAmountInput').value = '';
+}
+
+document.getElementById('addSessionBtn').addEventListener('click', async ()=>{
+  const date = document.getElementById('dateInput').value;
+  const start = document.getElementById('startInput').value;
+  const end = document.getElementById('endInput').value;
+  if(!date || !start || !end) return;
+  const calc = calcSession(start, end);
+  if(editingSessionId){
+    sessions = sessions.map(s=> s.id===editingSessionId ? { ...s, date, start, end, ...calc } : s);
+  } else {
+    sessions.push({ id: Date.now().toString(), date, start, end, ...calc });
+  }
+  await saveSessions();
+  resetSessionForm();
+  renderAll();
+});
+document.getElementById('cancelSessionEditBtn').addEventListener('click', resetSessionForm);
+
+document.getElementById('addPaymentBtn').addEventListener('click', async ()=>{
+  const date = document.getElementById('payDateInput').value;
+  const amount = Number(document.getElementById('payAmountInput').value);
+  if(!date || !amount) return;
+  if(editingPaymentId){
+    payments = payments.map(p=> p.id===editingPaymentId ? { ...p, date, amount } : p);
+  } else {
+    payments.push({ id: Date.now().toString(), date, amount });
+  }
+  await savePayments();
+  resetPaymentForm();
+  renderAll();
+});
+document.getElementById('cancelPaymentEditBtn').addEventListener('click', resetPaymentForm);
+
+document.getElementById('saveSettingsBtn').addEventListener('click', async ()=>{
+  settings.currency = document.getElementById('currencyInput').value.trim() || DEFAULT_SETTINGS.currency;
+  settings.rate = Number(document.getElementById('rateInput').value) || 0;
+  settings.taxPercent = Number(document.getElementById('taxInput').value) || 0;
+  settings.breakThreshold = Number(document.getElementById('breakThresholdInput').value) || 0;
+  settings.breakOver = Number(document.getElementById('breakOverInput').value) || 0;
+  settings.breakUnder = Number(document.getElementById('breakUnderInput').value) || 0;
+  await saveSettings();
+  recalcAllSessions();
+  await saveSessions();
+  renderAll();
+});
+
+document.getElementById('monthFilter').addEventListener('change', renderAll);
+
+document.addEventListener('click', async (e)=>{
+  const btn = e.target.closest('button[data-act]');
+  if(!btn) return;
+  const act = btn.dataset.act, id = btn.dataset.id;
+  if(act==='del-session'){
+    if(!confirm("Ushbu yozuvni o'chirishni tasdiqlaysizmi?")) return;
+    sessions = sessions.filter(s=>s.id!==id);
+    await saveSessions(); renderAll();
+  } else if(act==='edit-session'){
+    const s = sessions.find(x=>x.id===id); if(!s) return;
+    document.getElementById('dateInput').value = s.date;
+    document.getElementById('startInput').value = s.start;
+    document.getElementById('endInput').value = s.end;
+    editingSessionId = id;
+    document.getElementById('sessionFormTitle').textContent = 'Yozuvni tahrirlash';
+    document.getElementById('addSessionBtn').textContent = 'Yangilash';
+    document.getElementById('cancelSessionEditBtn').style.display = 'inline-block';
+    document.getElementById('dateInput').scrollIntoView({behavior:'smooth', block:'center'});
+  } else if(act==='del-payment'){
+    if(!confirm("Ushbu to'lovni o'chirishni tasdiqlaysizmi?")) return;
+    payments = payments.filter(p=>p.id!==id);
+    await savePayments(); renderAll();
+  } else if(act==='edit-payment'){
+    const p = payments.find(x=>x.id===id); if(!p) return;
+    document.getElementById('payDateInput').value = p.date;
+    document.getElementById('payAmountInput').value = p.amount;
+    editingPaymentId = id;
+    document.getElementById('paymentFormTitle').textContent = "To'lovni tahrirlash";
+    document.getElementById('addPaymentBtn').textContent = 'Yangilash';
+    document.getElementById('cancelPaymentEditBtn').style.display = 'inline-block';
+  }
+});
+
+document.getElementById('printBtn').addEventListener('click', ()=> window.print());
+
+document.getElementById('exportCsvBtn').addEventListener('click', ()=>{
+  const rows = [];
+  rows.push(['Sana','Kun','Keldi','Ketdi','Soat','Tanaffus','Sof soat','Pul'].join(','));
+  sessions.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(s=>{
+    rows.push([s.date, weekday(s.date), s.start, s.end, s.hours, s.breakHours, s.netHours, s.pay].join(','));
+  });
+  rows.push('');
+  const allGross = sessions.reduce((a,s)=>a+s.pay,0);
+  const allHours = sessions.reduce((a,s)=>a+s.netHours,0);
+  const tax = allGross * settings.taxPercent/100;
+  const netPay = allGross - tax;
+  const paidSum = payments.reduce((a,p)=>a+Number(p.amount),0);
+  rows.push(`Jami sof soat,${fmt(allHours)}`);
+  rows.push(`Ish haqi (soliqsiz),${fmt(allGross)}`);
+  rows.push(`Soliq (${settings.taxPercent}%),${fmt(tax)}`);
+  rows.push(`Sof ish haqi,${fmt(netPay)}`);
+  rows.push('');
+  rows.push(['Sana','Summa'].join(','));
+  payments.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(p=>{
+    rows.push([p.date, p.amount].join(','));
+  });
+  rows.push(`Jami berilgan,${fmt(paidSum)}`);
+  rows.push(`Qolgan pul,${fmt(netPay - paidSum)}`);
+
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ish-vaqti-hisobot-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+async function init(){
+  const s = await storageGet('settings');
+  if(s) settings = { ...DEFAULT_SETTINGS, ...s };
+  const sess = await storageGet('sessions');
+  if(sess) sessions = sess;
+  const pay = await storageGet('payments');
+  if(pay) payments = pay;
+
+  document.getElementById('currencyInput').value = settings.currency;
+  document.getElementById('rateInput').value = settings.rate;
+  document.getElementById('taxInput').value = settings.taxPercent;
+  document.getElementById('breakThresholdInput').value = settings.breakThreshold;
+  document.getElementById('breakOverInput').value = settings.breakOver;
+  document.getElementById('breakUnderInput').value = settings.breakUnder;
+
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('dateInput').value = today;
+  document.getElementById('payDateInput').value = today;
+
+  renderAll();
+}
+init();
+</script>
+</body>
+</html>
